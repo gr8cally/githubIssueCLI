@@ -3,8 +3,11 @@
 package github
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -12,7 +15,7 @@ import (
 	"time"
 )
 
-const IssuesURL = "https://api.github.com/search/issues"
+const BaseUrl = "https://api.github.com"
 
 type IssuesSearchResult struct {
 	TotalCount int `json:"total_count"`
@@ -73,7 +76,7 @@ func (i Issu) String() string {
 // SearchIssues queries the GitHub issue tracker.
 func SearchIssues(terms []string) (*IssuesSearchResult, error) {
 	q := url.QueryEscape(strings.Join(terms, " "))
-	resp, err := http.Get(IssuesURL + "?q=" + q)
+	resp, err := http.Get(BaseUrl + "?q=" + q)
 	if err != nil {
 		return nil, err
 	}
@@ -101,19 +104,8 @@ func SearchIssues(terms []string) (*IssuesSearchResult, error) {
 	return &result, nil
 }
 
-func GetUserIssues() (*[]Issu, error) {
-	var username = "gr8cally"
-	var password = "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"
-
-	client := &http.Client{}
-
-	req, err := http.NewRequest("GET", "https://api.github.com/issues", nil)
-	req.SetBasicAuth(username, password)
-
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Fatal(err)
-	}
+func GetUserIssues(username, password string) (*[]Issu, error) {
+	resp := getResponse(username, password, "/issues", "GET", nil)
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
@@ -126,4 +118,40 @@ func GetUserIssues() (*[]Issu, error) {
 		return nil, err
 	}
 	return &arr, nil
+}
+
+func getResponse(username string, password string, path string, method string, body io.Reader) *http.Response {
+	req, err := http.NewRequest(method, BaseUrl+path, body)
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json; charset=UTF-8")
+	}
+	req.SetBasicAuth(username, password)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return resp
+}
+
+type NewIssue struct {
+	Title     string   `json:"title"`
+	Body      string   `json:"body"`
+	Assignees []string `json:"assignees"`
+	Labels    []string `json:"labels"`
+}
+
+func CreateIssue(username, password string, issue NewIssue) (bool, error) {
+	jsonIssue, err := json.Marshal(issue)
+	if err != nil {
+		log.Fatal(err)
+	}
+	resp := getResponse(username, password, "/repos/gr8cally/TAir_Dry/issues", "POST", bytes.NewBuffer(jsonIssue))
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		return false, errors.New("issue not created")
+	}
+	return true, nil
 }
