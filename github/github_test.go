@@ -88,3 +88,12 @@ func TestUpdateIssue(t *testing.T) {
 		}
 	})
 }
+
+func TestCloseIssue(t *testing.T) {
+	t.Run("close an open issue successfully", func(t *testing.T) {
+		ok := CloseIssue(username, pass+word, 3)
+		if !ok {
+			t.Fatal("unsuccessful closing of issue")
+		}
+	})
+}

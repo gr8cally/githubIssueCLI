@@ -187,3 +187,15 @@ func UpdateIssue(username, password string, issue PostIssue) (bool, error) {
 	}
 	return true, nil
 }
+
+func CloseIssue(username, password string, issueNumber int) bool {
+	issue := PostIssue{
+		State:       closed,
+		issueNumber: issueNumber,
+	}
+	updatedIssue, err := UpdateIssue(username, password, issue)
+	if err != nil {
+		return false
+	}
+	return updatedIssue
+}
