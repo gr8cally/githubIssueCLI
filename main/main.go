@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -31,21 +32,23 @@ func main() {
 	//printGroup(monthOld, "less than a month")
 	//printGroup(yearOld, "less than a Year")
 	//printGroup(overYear, "Over a Year")
-	results, err := github.GetUserIssues()
+	var username = "gr8cally"
+	var pass, word = "ghp_1vXdXfbT9j2DXbLM2er", "WXzmyWavrdH2XRBMy"
+	//results, err := github.GetUserIssues(username, pass+word)
+	//if err != nil {
+	//	fmt.Println("Er ret")
+	//	os.Exit(1)
+	//}
+	//for _, v := range *results {
+	//	fmt.Printf("%+v\n", v)
+	//}
+
+	_, err := github.CreateIssue(username, pass+word, "issue 1 lege")
 	if err != nil {
 		fmt.Println("Er ret")
+		os.Exit(1)
 	}
-	for _, v := range *results {
-		//fmt.Println(v.Title)
-		fmt.Printf("%+v\n", v)
-		//fmt.Println(v)
-		//fmt.Printf("%v\n", v.Labels)
-		//for _, ve := range v.Labels {
-		//	fmt.Println(ve)
-		//}
-
-	}
-	fmt.Println("Donna")
+	fmt.Println("sucessfully created")
 
 }
 
