@@ -43,14 +43,26 @@ func main() {
 	//	fmt.Printf("%+v\n", v)
 	//}
 
-	issue := github.NewIssue{
-		Title:     "issue 1 lege",
-		Body:      "this is from CLI app, no body",
-		Assignees: []string{"gr8cally"},
-		Labels:    []string{"bug"},
-	}
+	//issue := github.PostIssue{
+	//	Title:     "issue 1 lege",
+	//	Body:      "this is from CLI app, no body",
+	//	Assignees: []string{"gr8cally"},
+	//	Labels:    []string{"bug"},
+	//}
+	//
+	//_, err := github.CreateIssue(username, pass+word, issue)
+	//if err != nil {
+	//	fmt.Println("Er ret")
+	//	os.Exit(1)
+	//}
+	//fmt.Println("sucessfully created")
 
-	_, err := github.CreateIssue(username, pass+word, issue)
+	updateIssue := github.PostIssue{
+		Title: "was new issh, i go change uu tire",
+		Body:  "working now",
+	}
+	updateIssue.SetIssueNumber(3)
+	_, err := github.UpdateIssue(username, pass+word, updateIssue)
 	if err != nil {
 		fmt.Println("Er ret")
 		os.Exit(1)
