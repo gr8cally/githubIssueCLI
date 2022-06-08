@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -46,7 +47,7 @@ type Label struct {
 	Name string
 }
 
-type Issu struct {
+type GetIssue struct {
 	Link     string `json:"html_url"`
 	Title    string
 	Owner    *User `json:"User"`
@@ -56,7 +57,7 @@ type Issu struct {
 	Body     string
 }
 
-func (i Issu) String() string {
+func (i GetIssue) String() string {
 	output := "{"
 	output += fmt.Sprintf("Link: %v\n", i.Link)
 	output += fmt.Sprintf("Title: %v\n", i.Title)
@@ -104,7 +105,7 @@ func SearchIssues(terms []string) (*IssuesSearchResult, error) {
 	return &result, nil
 }
 
-func GetUserIssues(username, password string) (*[]Issu, error) {
+func GetUserIssues(username, password string) (*[]GetIssue, error) {
 	resp := getResponse(username, password, "/issues", "GET", nil)
 	defer resp.Body.Close()
 
@@ -113,7 +114,7 @@ func GetUserIssues(username, password string) (*[]Issu, error) {
 		return nil, fmt.Errorf("search query failed: %s", resp.Status)
 	}
 
-	var arr []Issu
+	var arr []GetIssue
 	if err := json.NewDecoder(resp.Body).Decode(&arr); err != nil {
 		return nil, err
 	}
@@ -121,7 +122,11 @@ func GetUserIssues(username, password string) (*[]Issu, error) {
 }
 
 func getResponse(username string, password string, path string, method string, body io.Reader) *http.Response {
+	fmt.Println(path)
 	req, err := http.NewRequest(method, BaseUrl+path, body)
+	if err != nil {
+		log.Fatal(err)
+	}
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json; charset=UTF-8")
 	}
@@ -135,14 +140,27 @@ func getResponse(username string, password string, path string, method string, b
 	return resp
 }
 
-type NewIssue struct {
-	Title     string   `json:"title"`
-	Body      string   `json:"body"`
-	Assignees []string `json:"assignees"`
-	Labels    []string `json:"labels"`
+type IssueState string
+
+const (
+	open   IssueState = "open"
+	closed            = "closed"
+)
+
+type PostIssue struct {
+	Title       string     `json:"title,omitempty"`
+	Body        string     `json:"body,omitempty"`
+	Assignees   []string   `json:"assignees,omitempty"`
+	Labels      []string   `json:"labels,omitempty"`
+	State       IssueState `json:"state,omitempty"`
+	issueNumber int
 }
 
-func CreateIssue(username, password string, issue NewIssue) (bool, error) {
+func (issue PostIssue) SetIssueNumber(i int) {
+	issue.issueNumber = i
+}
+
+func CreateIssue(username, password string, issue PostIssue) (bool, error) {
 	jsonIssue, err := json.Marshal(issue)
 	if err != nil {
 		log.Fatal(err)
@@ -152,6 +170,20 @@ func CreateIssue(username, password string, issue NewIssue) (bool, error) {
 
 	if resp.StatusCode != http.StatusCreated {
 		return false, errors.New("issue not created")
+	}
+	return true, nil
+}
+
+func UpdateIssue(username, password string, issue PostIssue) (bool, error) {
+	jsonIssue, err := json.Marshal(issue)
+	if err != nil {
+		log.Fatal(err)
+	}
+	resp := getResponse(username, password, "/repos/gr8cally/TAir_Dry/issues/"+strconv.Itoa(issue.issueNumber), "PATCH", bytes.NewBuffer(jsonIssue))
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return false, errors.New("issue not updated")
 	}
 	return true, nil
 }

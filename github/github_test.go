@@ -28,7 +28,7 @@ func TestGetUserIssues(t *testing.T) {
 }
 
 func TestCreateIssue(t *testing.T) {
-	issue := NewIssue{
+	issue := PostIssue{
 		Title:     "this is from a test, please delete",
 		Body:      "this is from CLI app, no body",
 		Assignees: []string{"gr8cally"},
@@ -45,12 +45,46 @@ func TestCreateIssue(t *testing.T) {
 	})
 
 	t.Run("create new issue with body missing a required field", func(t *testing.T) {
-		ok, err := CreateIssue(username, pass+word, NewIssue{})
+		ok, err := CreateIssue(username, pass+word, PostIssue{})
 		if ok {
 			t.Fatal("got 201 which wasn't expected")
 		}
 		if err == nil {
 			t.Fatal("Want a an error 422 here")
+		}
+	})
+}
+
+func TestUpdateIssue(t *testing.T) {
+	t.Run("update an issue sucessfully", func(t *testing.T) {
+		updateIssue := PostIssue{
+			Title:       "was new issh, Renamed for test purposes",
+			Body:        "body updated from test",
+			issueNumber: 2,
+		}
+
+		ok, err := UpdateIssue(username, pass+word, updateIssue)
+		if !ok {
+			t.Fatal("want 200 status didnt get that")
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	t.Run("update an issue that does not exist", func(t *testing.T) {
+		updateIssue := PostIssue{
+			Title:       "was new issh, Renamed for test purposes",
+			Body:        "body updated from test",
+			issueNumber: 34346790,
+		}
+
+		ok, err := UpdateIssue(username, pass+word, updateIssue)
+		if ok {
+			t.Fatal("got 200 but wanted a failure")
+		}
+		if err == nil {
+			t.Fatal("want an error not nil error")
 		}
 	})
 }
