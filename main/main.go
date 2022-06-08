@@ -43,7 +43,14 @@ func main() {
 	//	fmt.Printf("%+v\n", v)
 	//}
 
-	_, err := github.CreateIssue(username, pass+word, "issue 1 lege")
+	issue := github.NewIssue{
+		Title:     "issue 1 lege",
+		Body:      "this is from CLI app, no body",
+		Assignees: []string{"gr8cally"},
+		Labels:    []string{"bug"},
+	}
+
+	_, err := github.CreateIssue(username, pass+word, issue)
 	if err != nil {
 		fmt.Println("Er ret")
 		os.Exit(1)

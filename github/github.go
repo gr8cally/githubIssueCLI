@@ -142,13 +142,7 @@ type NewIssue struct {
 	Labels    []string `json:"labels"`
 }
 
-func CreateIssue(username, password, title string) (bool, error) {
-	issue := NewIssue{
-		Title:     title,
-		Body:      "this is from CLI app, no body",
-		Assignees: []string{"gr8cally"},
-		Labels:    []string{"bug"},
-	}
+func CreateIssue(username, password string, issue NewIssue) (bool, error) {
 	jsonIssue, err := json.Marshal(issue)
 	if err != nil {
 		log.Fatal(err)
