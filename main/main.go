@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -32,8 +31,8 @@ func main() {
 	//printGroup(monthOld, "less than a month")
 	//printGroup(yearOld, "less than a Year")
 	//printGroup(overYear, "Over a Year")
-	var username = "gr8cally"
-	var pass, word = "ghp_1vXdXfbT9j2DXbLM2er", "WXzmyWavrdH2XRBMy"
+	//var username = "gr8cally"
+	//var pass, word = "ghp_1vXdXfbT9j2DXbLM2er", "WXzmyWavrdH2XRBMy"
 	//results, err := github.GetUserIssues(username, pass+word)
 	//if err != nil {
 	//	fmt.Println("Er ret")
@@ -57,17 +56,17 @@ func main() {
 	//}
 	//fmt.Println("sucessfully created")
 
-	updateIssue := github.PostIssue{
-		Title: "was new issh, i go change uu tire",
-		Body:  "working now",
-	}
-	updateIssue.SetIssueNumber(3)
-	_, err := github.UpdateIssue(username, pass+word, updateIssue)
-	if err != nil {
-		fmt.Println("Er ret")
-		os.Exit(1)
-	}
-	fmt.Println("sucessfully created")
+	//updateIssue := github.PostIssue{
+	//	Title: "was new issh, i go change uu tire",
+	//	Body:  "working now",
+	//}
+	//updateIssue.SetIssueNumber(3)
+	//_, err := github.UpdateIssue(username, pass+word, updateIssue)
+	//if err != nil {
+	//	fmt.Println("Er ret")
+	//	os.Exit(1)
+	//}
+	//fmt.Println("sucessfully created")
 
 }
 

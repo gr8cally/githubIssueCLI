@@ -35,7 +35,7 @@ func TestCreateIssue(t *testing.T) {
 		Labels:    []string{"bug"},
 	}
 	t.Run("create new issue with valid body", func(t *testing.T) {
-		ok, err := CreateIssue(username, pass+word, issue)
+		ok, err := CreateIssue(username, pass+word, "gr8cally", "TAir_Dry", issue)
 		if !ok {
 			t.Fatal("want 201 status didnt get that")
 		}
@@ -45,7 +45,7 @@ func TestCreateIssue(t *testing.T) {
 	})
 
 	t.Run("create new issue with body missing a required field", func(t *testing.T) {
-		ok, err := CreateIssue(username, pass+word, PostIssue{})
+		ok, err := CreateIssue(username, pass+word, "gr8cally", "TAir_Dry", PostIssue{})
 		if ok {
 			t.Fatal("got 201 which wasn't expected")
 		}
@@ -63,7 +63,7 @@ func TestUpdateIssue(t *testing.T) {
 			issueNumber: 2,
 		}
 
-		ok, err := UpdateIssue(username, pass+word, updateIssue)
+		ok, err := UpdateIssue(username, pass+word, "gr8cally", "TAir_Dry", updateIssue)
 		if !ok {
 			t.Fatal("want 200 status didnt get that")
 		}
@@ -79,7 +79,7 @@ func TestUpdateIssue(t *testing.T) {
 			issueNumber: 34346790,
 		}
 
-		ok, err := UpdateIssue(username, pass+word, updateIssue)
+		ok, err := UpdateIssue(username, pass+word, "gr8cally", "TAir_Dry", updateIssue)
 		if ok {
 			t.Fatal("got 200 but wanted a failure")
 		}
@@ -91,7 +91,7 @@ func TestUpdateIssue(t *testing.T) {
 
 func TestCloseIssue(t *testing.T) {
 	t.Run("close an open issue successfully", func(t *testing.T) {
-		ok := CloseIssue(username, pass+word, 3)
+		ok := CloseIssue(username, pass+word, "gr8cally", "TAir_Dry", 3)
 		if !ok {
 			t.Fatal("unsuccessful closing of issue")
 		}
