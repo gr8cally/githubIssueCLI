@@ -11,12 +11,17 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"path"
 	"strconv"
 	"strings"
 	"time"
 )
 
-const BaseUrl = "https://api.github.com"
+const (
+	BaseUrl    = "https://api.github.com"
+	issuesPath = "/issues"
+	reposPath  = "/repos"
+)
 
 type IssuesSearchResult struct {
 	TotalCount int `json:"total_count"`
@@ -106,7 +111,8 @@ func SearchIssues(terms []string) (*IssuesSearchResult, error) {
 }
 
 func GetUserIssues(username, password string) (*[]GetIssue, error) {
-	resp := getResponse(username, password, "/issues", "GET", nil)
+	currentUrl := buildUrl(issuesPath)
+	resp := getResponse(username, password, currentUrl, "GET", nil)
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
@@ -121,9 +127,17 @@ func GetUserIssues(username, password string) (*[]GetIssue, error) {
 	return &arr, nil
 }
 
-func getResponse(username string, password string, path string, method string, body io.Reader) *http.Response {
-	fmt.Println(path)
-	req, err := http.NewRequest(method, BaseUrl+path, body)
+func buildUrl(paths ...string) *url.URL {
+	currentUrl, err := url.Parse(BaseUrl)
+	if err != nil {
+		log.Fatal(err)
+	}
+	currentUrl.Path = path.Join(paths...)
+	return currentUrl
+}
+
+func getResponse(username string, password string, url *url.URL, method string, body io.Reader) *http.Response {
+	req, err := http.NewRequest(method, url.String(), body)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -160,12 +174,14 @@ func (issue PostIssue) SetIssueNumber(i int) {
 	issue.issueNumber = i
 }
 
-func CreateIssue(username, password string, issue PostIssue) (bool, error) {
+func CreateIssue(username, password, owner, repo string, issue PostIssue) (bool, error) {
 	jsonIssue, err := json.Marshal(issue)
 	if err != nil {
 		log.Fatal(err)
 	}
-	resp := getResponse(username, password, "/repos/gr8cally/TAir_Dry/issues", "POST", bytes.NewBuffer(jsonIssue))
+
+	currentUrl := buildUrl(reposPath, owner, repo, issuesPath)
+	resp := getResponse(username, password, currentUrl, "POST", bytes.NewBuffer(jsonIssue))
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusCreated {
@@ -174,12 +190,14 @@ func CreateIssue(username, password string, issue PostIssue) (bool, error) {
 	return true, nil
 }
 
-func UpdateIssue(username, password string, issue PostIssue) (bool, error) {
+func UpdateIssue(username, password, owner, repo string, issue PostIssue) (bool, error) {
 	jsonIssue, err := json.Marshal(issue)
 	if err != nil {
 		log.Fatal(err)
 	}
-	resp := getResponse(username, password, "/repos/gr8cally/TAir_Dry/issues/"+strconv.Itoa(issue.issueNumber), "PATCH", bytes.NewBuffer(jsonIssue))
+
+	currentUrl := buildUrl(reposPath, owner, repo, issuesPath, strconv.Itoa(issue.issueNumber))
+	resp := getResponse(username, password, currentUrl, "PATCH", bytes.NewBuffer(jsonIssue))
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
@@ -188,12 +206,12 @@ func UpdateIssue(username, password string, issue PostIssue) (bool, error) {
 	return true, nil
 }
 
-func CloseIssue(username, password string, issueNumber int) bool {
+func CloseIssue(username, password, owner, repo string, issueNumber int) bool {
 	issue := PostIssue{
 		State:       closed,
 		issueNumber: issueNumber,
 	}
-	updatedIssue, err := UpdateIssue(username, password, issue)
+	updatedIssue, err := UpdateIssue(username, password, owner, repo, issue)
 	if err != nil {
 		return false
 	}
