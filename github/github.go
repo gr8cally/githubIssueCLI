@@ -14,7 +14,6 @@ import (
 	"path"
 	"strconv"
 	"strings"
-	"time"
 )
 
 const (
@@ -23,29 +22,8 @@ const (
 	reposPath  = "/repos"
 )
 
-type IssuesSearchResult struct {
-	TotalCount int `json:"total_count"`
-	Items      []*Issue
-}
-
-type Issue struct {
-	Number    int
-	HTMLURL   string `json:"html_url"`
-	Title     string
-	State     string
-	User      *User
-	CreatedAt time.Time `json:"created_at"`
-	Body      string    // in Markdown format
-}
-
 type User struct {
 	Login string
-	//HTMLURL string `json:"html_url"`
-}
-
-type Head struct {
-	Limit  int `json:"x-ratelimit-limit"`
-	Server string
 }
 
 type Label struct {
@@ -60,6 +38,26 @@ type GetIssue struct {
 	State    string
 	Assignee *User
 	Body     string
+}
+
+type IssueState string
+
+const (
+	open   IssueState = "open"
+	closed            = "closed"
+)
+
+type PostIssue struct {
+	Title       string     `json:"title,omitempty"`
+	Body        string     `json:"body,omitempty"`
+	Assignees   []string   `json:"assignees,omitempty"`
+	Labels      []string   `json:"labels,omitempty"`
+	State       IssueState `json:"state,omitempty"`
+	issueNumber int
+}
+
+func (issue *PostIssue) SetIssueNumber(i int) {
+	issue.issueNumber = i
 }
 
 func (i GetIssue) String() string {
@@ -79,37 +77,7 @@ func (i GetIssue) String() string {
 	return output
 }
 
-// SearchIssues queries the GitHub issue tracker.
-func SearchIssues(terms []string) (*IssuesSearchResult, error) {
-	q := url.QueryEscape(strings.Join(terms, " "))
-	resp, err := http.Get(BaseUrl + "?q=" + q)
-	if err != nil {
-		return nil, err
-	}
-	//var head Head
-	v := resp.Header.Get("x-ratelimit-limit")
-	fmt.Println("L: ", v)
-	v = resp.Header.Get("server")
-	fmt.Println("S: ", v)
-	v = resp.Header.Get("x-ratelimit-remaining")
-	fmt.Println("R: ", v)
-
-	// We must close resp.Body on all execution paths.
-	// (Chapter 5 presents 'defer', which makes this simpler.)
-	if resp.StatusCode != http.StatusOK {
-		resp.Body.Close()
-		return nil, fmt.Errorf("search query failed: %s", resp.Status)
-	}
-
-	var result IssuesSearchResult
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		resp.Body.Close()
-		return nil, err
-	}
-	resp.Body.Close()
-	return &result, nil
-}
-
+// GetUserIssues queries GitHub and returns a list of issues assigned to the authenticated user
 func GetUserIssues(username, password string) (*[]GetIssue, error) {
 	currentUrl := buildUrl(issuesPath)
 	resp := getResponse(username, password, currentUrl, "GET", nil)
@@ -127,6 +95,8 @@ func GetUserIssues(username, password string) (*[]GetIssue, error) {
 	return &arr, nil
 }
 
+// buildUrl takes in a path parameters as strings in the order which they should appear with or without leading `/`
+// and returns a GitHub api url with those paths
 func buildUrl(paths ...string) *url.URL {
 	currentUrl, err := url.Parse(BaseUrl)
 	if err != nil {
@@ -136,6 +106,8 @@ func buildUrl(paths ...string) *url.URL {
 	return currentUrl
 }
 
+// getResponse takes in username+password for authentication, and sends a {method} request to the url and returns the response
+// the body parameter must be of type json
 func getResponse(username string, password string, url *url.URL, method string, body io.Reader) *http.Response {
 	req, err := http.NewRequest(method, url.String(), body)
 	if err != nil {
@@ -154,26 +126,9 @@ func getResponse(username string, password string, url *url.URL, method string, 
 	return resp
 }
 
-type IssueState string
-
-const (
-	open   IssueState = "open"
-	closed            = "closed"
-)
-
-type PostIssue struct {
-	Title       string     `json:"title,omitempty"`
-	Body        string     `json:"body,omitempty"`
-	Assignees   []string   `json:"assignees,omitempty"`
-	Labels      []string   `json:"labels,omitempty"`
-	State       IssueState `json:"state,omitempty"`
-	issueNumber int
-}
-
-func (issue PostIssue) SetIssueNumber(i int) {
-	issue.issueNumber = i
-}
-
+// CreateIssue takes in username+password for authentication, and
+// creates an issue in the specified {owner}/{repo} using the marshalled issue passed in
+// it returns true if successfully created, false otherwise with the error encountered
 func CreateIssue(username, password, owner, repo string, issue PostIssue) (bool, error) {
 	jsonIssue, err := json.Marshal(issue)
 	if err != nil {
@@ -190,6 +145,9 @@ func CreateIssue(username, password, owner, repo string, issue PostIssue) (bool,
 	return true, nil
 }
 
+// UpdateIssue takes in username+password for authentication,
+// and updates an issue in {owner}/{repo}, the issue number will be defined within the issue argument
+// it updates the issue with the values passed in and returns true, nil if successful, false and error otherwise
 func UpdateIssue(username, password, owner, repo string, issue PostIssue) (bool, error) {
 	jsonIssue, err := json.Marshal(issue)
 	if err != nil {
@@ -206,6 +164,8 @@ func UpdateIssue(username, password, owner, repo string, issue PostIssue) (bool,
 	return true, nil
 }
 
+// CloseIssue takes in username+password for authentication,
+// it sets the issue with {issueNumber} in {owner}/{repo} to closed, if successful returns true, false otherwise
 func CloseIssue(username, password, owner, repo string, issueNumber int) bool {
 	issue := PostIssue{
 		State:       closed,
