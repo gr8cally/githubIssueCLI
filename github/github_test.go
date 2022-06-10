@@ -97,3 +97,11 @@ func TestCloseIssue(t *testing.T) {
 		}
 	})
 }
+
+func TestPostIssue_SetIssueNumber(t *testing.T) {
+	issue := PostIssue{}
+	issue.SetIssueNumber(3)
+	if issue.issueNumber != 3 {
+		t.Fatal("wanted issue number 3, didnt get it")
+	}
+}
